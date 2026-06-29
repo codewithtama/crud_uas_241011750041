@@ -1,58 +1,88 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CineManage - Laporan Manajemen Film Bioskop (UAS Rekayasa Web)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi berbasis web untuk mengelola data film bioskop dengan tampilan antarmuka ala Netflix. Proyek ini dibuat sebagai syarat kelulusan Ujian Akhir Semester (UAS) mata kuliah Rekayasa Web.
 
-## About Laravel
+## Informasi Pengembang
+- Nama: Tamav
+- NIM: 241011750041
+- Mata Kuliah: Rekayasa Web
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Deskripsi Proyek
+CineManage adalah platform manajemen data film bioskop yang responsif, interaktif, dan modern. Aplikasi ini memiliki dua area utama:
+1. Public Frontend: Antarmuka ramah pengguna dengan tampilan premium ala Netflix, dilengkapi fitur pencarian, filter genre, serta tampilan detail poster film.
+2. Admin Dashboard: Panel manajemen khusus administrator yang terproteksi autentikasi untuk melakukan operasi CRUD (Create, Read, Update, Delete) data film secara lengkap, serta melakukan ekspor laporan berformat PDF.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur Utama
+1. Autentikasi Admin: Pengamanan dashboard admin menggunakan sistem login berbasis session.
+2. CRUD Film Lengkap:
+   - Menambahkan film baru beserta file poster film.
+   - Melihat daftar film lengkap dalam bentuk tabel administratif.
+   - Mengubah informasi film dan mengganti file poster.
+   - Menghapus film dan secara otomatis menghapus berkas poster terkait dari disk storage.
+3. Ekspor Laporan PDF: Menghasilkan dokumen laporan PDF formal berisi tabel data film lengkap dengan gambar poster masing-masing film.
+4. Optimasi Pemuatan Gambar PDF:
+   - Pemuatan gambar lokal menggunakan path absolut filesystem server (menggunakan fungsi storage_path) untuk mencegah terjadinya deadlock HTTP loopback pada server development single-threaded.
+   - Integrasi opsi isRemoteEnabled pada DomPDF untuk mendukung pemuatan gambar eksternal (CDN/IMDb).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Struktur Database (Tabel films)
+Kolom yang tersedia pada tabel films:
+- id_film (Primary Key)
+- judul (String)
+- genre (String)
+- sutradara (String)
+- tahun_rilis (Integer)
+- gambar (String / Path Gambar Poster)
+- created_at & updated_at (Timestamp)
 
-## Learning Laravel
+## Panduan Instalasi dan Penggunaan
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. Clone repositori ini ke komputer lokal Anda.
+2. Jalankan instalasi dependensi PHP:
+   ```bash
+   composer install
+   ```
+3. Salin file konfigurasi lingkungan dan sesuaikan nama database:
+   ```bash
+   copy .env.example .env
+   ```
+   Pastikan pengaturan database di file `.env` disesuaikan:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=db_uas_241011750041
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+4. Buat database baru di MySQL dengan nama `db_uas_241011750041`.
+5. Generate application key:
+   ```bash
+   php artisan key:generate
+   ```
+6. Jalankan migrasi dan seeder database untuk mengisi data awal film beserta akun administrator:
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
+   Akun Admin Default:
+   - Username: admin
+   - Password: admin123
+7. Lakukan symlink storage agar gambar lokal dapat diakses oleh publik:
+   ```bash
+   php artisan storage:link
+   ```
+8. Instal dependensi frontend (NPM) dan kompilasi aset:
+   ```bash
+   npm install
+   npm run build
+   ```
+9. Jalankan server lokal:
+   ```bash
+   php artisan serve
+   ```
+10. Akses aplikasi melalui peramban pada alamat http://127.0.0.1:8000.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+## Menjalankan Pengujian (Testing)
+Aplikasi ini dilengkapi dengan pengujian otomatis untuk memvalidasi alur autentikasi admin, pembuatan data film, serta ekspor PDF:
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+php artisan test
 ```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
