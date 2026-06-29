@@ -55,7 +55,7 @@ class FilmController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'judul' => ['required', 'string', 'max:255'],
+            'judul' => ['required', 'string', 'max:255', 'unique:films,judul'],
             'genre' => ['required', 'string', 'max:255'],
             'sutradara' => ['required', 'string', 'max:255'],
             'tahun_rilis' => ['required', 'integer', 'min:1800', 'max:2100'],
@@ -93,7 +93,7 @@ class FilmController extends Controller
         $film = Film::findOrFail($id);
 
         $request->validate([
-            'judul' => ['required', 'string', 'max:255'],
+            'judul' => ['required', 'string', 'max:255', 'unique:films,judul,' . $id . ',id_film'],
             'genre' => ['required', 'string', 'max:255'],
             'sutradara' => ['required', 'string', 'max:255'],
             'tahun_rilis' => ['required', 'integer', 'min:1800', 'max:2100'],
