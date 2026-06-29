@@ -66,7 +66,7 @@
             <div class="absolute inset-0 flex flex-col justify-end pb-12 sm:pb-20 px-4 sm:px-12 md:px-16 max-w-4xl space-y-4 z-10">
                 <!-- N-Series tag -->
                 <div class="flex items-center gap-2">
-                    <span class="text-netflix-red font-bebas text-3xl tracking-widest animate-pulse">N</span>
+                    <span class="text-netflix-red font-bebas text-3xl tracking-widest">CINEMANAGE</span>
                     <span class="text-xs uppercase tracking-widest text-slate-300 font-bold">FILM POPULER</span>
                 </div>
                 
