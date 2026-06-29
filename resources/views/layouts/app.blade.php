@@ -99,31 +99,69 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links -->
-                <nav class="flex items-center gap-6">
-                    <a href="{{ route('home') }}" class="text-sm font-medium tracking-wide {{ Route::is('home') ? 'text-white font-bold' : 'text-slate-300 hover:text-slate-100' }} transition-colors">
-                        Katalog Publik
-                    </a>
-                    
-                    @auth
-                        <a href="{{ route('admin.index') }}" class="text-sm font-medium tracking-wide {{ Route::is('admin.*') ? 'text-white font-bold' : 'text-slate-300 hover:text-slate-100' }} transition-colors">
-                            Dashboard Admin
+                <!-- Right Side Header Elements -->
+                <div class="flex items-center gap-4 sm:gap-6">
+                    <!-- Search Bar (Desktop) -->
+                    <form action="{{ route('home') }}" method="GET" class="relative hidden md:flex items-center">
+                        <button type="submit" class="absolute left-3 text-slate-400 hover:text-white transition-colors cursor-pointer focus:outline-none">
+                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                        </button>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul film, genre, atau sutradara..." 
+                            class="w-64 lg:w-96 pl-9 pr-8 py-2 bg-zinc-900/60 border border-zinc-700/60 rounded-md text-sm text-white placeholder-slate-500 focus:outline-none focus:w-80 lg:focus:w-[480px] focus:bg-black focus:border-netflix-red focus:ring-1 focus:ring-netflix-red transition-all duration-300">
+                        @if(request('search'))
+                            <a href="{{ route('home') }}" class="absolute right-2.5 text-slate-400 hover:text-white transition-colors">
+                                <i class="fa-solid fa-xmark text-xs"></i>
+                            </a>
+                        @endif
+                    </form>
+
+                    <!-- Mobile Search Toggle -->
+                    <button id="mobileSearchToggle" class="md:hidden text-slate-300 hover:text-white p-2 focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                    </button>
+
+                    <!-- Navigation Links -->
+                    <nav class="flex items-center gap-4 sm:gap-6">
+                        <a href="{{ route('home') }}" class="text-sm font-medium tracking-wide {{ Route::is('home') ? 'text-white font-bold' : 'text-slate-300 hover:text-slate-100' }} transition-colors">
+                            Katalog Publik
                         </a>
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-sm font-medium text-slate-300 hover:text-netflix-red transition-colors cursor-pointer flex items-center gap-1.5">
-                                <span class="hidden sm:inline">Logout</span> <i class="fa-solid fa-right-from-bracket"></i>
-                            </button>
-                        </form>
-                    @else
-                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-4 py-1.5 text-sm font-semibold text-white bg-netflix-red hover:bg-[#b81d24] focus:outline-none focus:ring-2 focus:ring-netflix-red rounded transition-all shadow-lg shadow-netflix-red/20">
-                            Masuk <i class="fa-solid fa-chevron-right text-xs ml-1.5"></i>
-                        </a>
-                    @endauth
-                </nav>
+                        
+                        @auth
+                            <a href="{{ route('admin.index') }}" class="text-sm font-medium tracking-wide {{ Route::is('admin.*') ? 'text-white font-bold' : 'text-slate-300 hover:text-slate-100' }} transition-colors">
+                                Dashboard Admin
+                            </a>
+                            <form action="{{ route('logout') }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="text-sm font-medium text-slate-300 hover:text-netflix-red transition-colors cursor-pointer flex items-center gap-1.5">
+                                    <span class="hidden sm:inline">Logout</span> <i class="fa-solid fa-right-from-bracket"></i>
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-4 py-1.5 text-sm font-semibold text-white bg-netflix-red hover:bg-[#b81d24] focus:outline-none focus:ring-2 focus:ring-netflix-red rounded transition-all shadow-lg shadow-netflix-red/20">
+                                Masuk <i class="fa-solid fa-chevron-right text-xs ml-1.5"></i>
+                            </a>
+                        @endauth
+                    </nav>
+                </div>
             </div>
         </div>
     </header>
+
+    <!-- Mobile Search Bar Drawer -->
+    <div id="mobileSearchDrawer" class="hidden md:hidden fixed top-16 sm:top-20 left-0 w-full z-40 bg-[#141414]/95 border-b border-zinc-800/80 px-4 py-3 backdrop-blur-md transition-all duration-300">
+        <form action="{{ route('home') }}" method="GET" class="relative">
+            <button type="submit" class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer focus:outline-none">
+                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </button>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari film, genre, atau sutradara..." 
+                class="block w-full pl-9 pr-10 py-2 bg-zinc-900/80 border border-zinc-800 rounded-md text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-netflix-red focus:border-netflix-red text-sm">
+            @if(request('search'))
+                <a href="{{ route('home') }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </a>
+            @endif
+        </form>
+    </div>
 
     <!-- Main Content wrapper with top padding to account for fixed navbar -->
     <main class="flex-grow w-full pb-16 pt-0">
@@ -178,7 +216,7 @@
         </div>
     </footer>
 
-    <!-- Header Scroll Effect JS -->
+    <!-- Header Scroll Effect & Mobile Search Toggle JS -->
     <script>
         window.addEventListener('scroll', function() {
             const header = document.getElementById('mainHeader');
@@ -188,6 +226,28 @@
             } else {
                 header.classList.remove('bg-netflix-black', 'shadow-lg');
                 header.classList.add('bg-gradient-to-b', 'from-black/80', 'to-transparent');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('mobileSearchToggle');
+            const drawer = document.getElementById('mobileSearchDrawer');
+            if (toggleBtn && drawer) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    drawer.classList.toggle('hidden');
+                    const input = drawer.querySelector('input');
+                    if (!drawer.classList.contains('hidden') && input) {
+                        input.focus();
+                    }
+                });
+
+                // Close drawer on click outside
+                document.addEventListener('click', function(e) {
+                    if (!drawer.classList.contains('hidden') && !drawer.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)) {
+                        drawer.classList.add('hidden');
+                    }
+                });
             }
         });
     </script>

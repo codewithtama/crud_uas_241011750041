@@ -114,27 +114,6 @@
         @endif
     </div>
 
-    <!-- Search Bar Section -->
-    <div class="max-w-2xl mx-auto px-4 sm:px-6">
-        <form action="{{ route('home') }}" method="GET" class="relative group">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-netflix-red transition-colors">
-                <i class="fa-solid fa-magnifying-glass text-lg"></i>
-            </div>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul film, genre, atau sutradara..." 
-                class="block w-full pl-12 pr-44 py-3.5 bg-zinc-900/80 border border-zinc-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-netflix-red/50 focus:border-netflix-red transition-all text-sm backdrop-blur-md">
-            
-            <div class="absolute inset-y-1 right-1.5 flex items-center gap-2">
-                @if(request('search'))
-                    <a href="{{ route('home') }}" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-slate-300 rounded-md text-sm font-semibold flex items-center transition-all active:scale-95">
-                        Clear
-                    </a>
-                @endif
-                <button type="submit" class="px-6 py-2 bg-netflix-red hover:bg-[#b81d24] text-white rounded-md text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-md hover:shadow-lg">
-                    Cari
-                </button>
-            </div>
-        </form>
-    </div>
 
     <!-- Catalog Grid or Genre Rows -->
     <div class="px-4 sm:px-12 md:px-16 space-y-12">
