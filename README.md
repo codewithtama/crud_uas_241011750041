@@ -3,7 +3,7 @@
 Aplikasi berbasis web untuk mengelola data film bioskop dengan tampilan antarmuka ala Netflix. Proyek ini dibuat sebagai syarat kelulusan Ujian Akhir Semester (UAS) mata kuliah Rekayasa Web.
 
 ## Informasi Pengembang
-- Nama: Tamav
+- Nama: Dimas Alfa Pratama
 - NIM: 241011750041
 - Mata Kuliah: Rekayasa Web
 

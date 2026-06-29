@@ -87,7 +87,7 @@
                     <strong>Total Film:</strong> {{ $films->count() }} data
                 </td>
                 <td style="border: none; padding: 0; text-align: right; width: 50%;">
-                    <strong>Nama Mahasiswa:</strong> Tamav (UAS Rekayasa Web)<br>
+                    <strong>Nama Mahasiswa:</strong> Dimas Alfa Pratama (UAS Rekayasa Web)<br>
                     <strong>NIM:</strong> 241011750041
                 </td>
             </tr>
