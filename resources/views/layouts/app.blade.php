@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <meta name="description" content="Aplikasi CRUD Data Film Bioskop untuk memenuhi Tugas UAS Rekayasa Web.">
     <title>@yield('title', 'CineManage') - Portal Data Film Bioskop</title>
     

@@ -103,7 +103,7 @@
         </div>
         
         <div class="flex flex-wrap gap-2.5">
-            <a href="{{ route('admin.export-pdf') }}" class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold text-slate-300 bg-[#141414] border border-zinc-800 hover:bg-zinc-900 rounded transition-colors cursor-pointer">
+            <a id="btnExportPdf" href="{{ route('admin.export-pdf') }}" class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold text-slate-300 bg-[#141414] border border-zinc-800 hover:bg-zinc-900 rounded transition-colors cursor-pointer">
                 <i class="fa-solid fa-file-pdf text-netflix-red mr-2"></i> Export PDF
             </a>
             <a href="{{ route('admin.create') }}" class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold text-white bg-netflix-red hover:bg-[#b81d24] rounded transition-all shadow-md shadow-netflix-red/10 cursor-pointer">
@@ -193,7 +193,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('#filmsTable').DataTable({
+        var table = $('#filmsTable').DataTable({
             "order": [[1, "desc"]], // Order by ID descending by default
             "pageLength": 10,
             "language": {
@@ -211,6 +211,29 @@
                 }
             }
         });
+
+        // Update PDF export link dynamically on table draw
+        table.on('draw', function() {
+            var info = table.page.info();
+            var page = info.page + 1;
+            var limit = info.length;
+            var search = table.search();
+            var order = table.order();
+
+            var params = $.param({
+                page: page,
+                limit: limit,
+                search: search,
+                order_col: order[0] ? order[0][0] : '',
+                order_dir: order[0] ? order[0][1] : ''
+            });
+
+            var baseUrl = "{{ route('admin.export-pdf') }}";
+            $('#btnExportPdf').attr('href', baseUrl + '?' + params);
+        });
+
+        // Trigger initial update of PDF link
+        table.trigger('draw');
     });
 </script>
 @endsection

@@ -99,4 +99,45 @@ class FilmCrudTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    /**
+     * Test admin can export PDF with pagination, search, and sorting query parameters.
+     */
+    public function test_admin_can_export_pdf_with_pagination_and_search(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin Test',
+            'username' => 'admin',
+            'password' => bcrypt('admin123'),
+        ]);
+
+        Film::create([
+            'judul' => 'Inception',
+            'genre' => 'Sci-Fi',
+            'sutradara' => 'Christopher Nolan',
+            'tahun_rilis' => 2010,
+            'gambar' => 'films/test.jpg',
+        ]);
+
+        Film::create([
+            'judul' => 'Interstellar',
+            'genre' => 'Sci-Fi',
+            'sutradara' => 'Christopher Nolan',
+            'tahun_rilis' => 2014,
+            'gambar' => 'films/test2.jpg',
+        ]);
+
+        Film::create([
+            'judul' => 'The Dark Knight',
+            'genre' => 'Action',
+            'sutradara' => 'Christopher Nolan',
+            'tahun_rilis' => 2008,
+            'gambar' => 'films/test3.jpg',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/admin/export-pdf?limit=2&page=1&search=Sci-Fi&order_col=2&order_dir=asc');
+
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
 }

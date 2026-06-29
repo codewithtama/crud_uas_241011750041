@@ -141,11 +141,71 @@ class FilmController extends Controller
     }
 
     /**
-     * Export all movies list to PDF.
+     * Export movies list to PDF according to frontend pagination, search, and sorting.
      */
-    public function exportPdf()
+    public function exportPdf(Request $request)
     {
-        $films = Film::orderBy('judul', 'asc')->get();
+        $query = Film::query();
+
+        // 1. Search logic (matching DataTables search on fields: id_film, judul, genre, sutradara, tahun_rilis)
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                // Remove '#' prefix if searching by formatted ID (e.g. #0001)
+                $cleanSearch = ltrim($search, '#');
+                $cleanSearchInt = (int)$cleanSearch;
+                
+                $q->where('judul', 'like', "%{$search}%")
+                  ->orWhere('genre', 'like', "%{$search}%")
+                  ->orWhere('sutradara', 'like', "%{$search}%")
+                  ->orWhere('tahun_rilis', 'like', "%{$search}%");
+                
+                if (is_numeric($cleanSearch) && $cleanSearchInt > 0) {
+                    $q->orWhere('id_film', $cleanSearchInt);
+                }
+            });
+        }
+
+        // 2. Sorting logic (matching DataTables order)
+        $orderColIndex = $request->get('order_col');
+        $orderDir = $request->get('order_dir', 'desc');
+        if (!in_array(strtolower($orderDir), ['asc', 'desc'])) {
+            $orderDir = 'desc';
+        }
+
+        // Column mapping based on index table columns:
+        // index 0: Poster (not sorted)
+        // index 1: ID Film (id_film)
+        // index 2: Judul Film (judul)
+        // index 3: Genre (genre)
+        // index 4: Sutradara (sutradara)
+        // index 5: Tahun (tahun_rilis)
+        $columnsMap = [
+            1 => 'id_film',
+            2 => 'judul',
+            3 => 'genre',
+            4 => 'sutradara',
+            5 => 'tahun_rilis',
+        ];
+
+        if ($orderColIndex !== null && array_key_exists((int)$orderColIndex, $columnsMap)) {
+            $query->orderBy($columnsMap[(int)$orderColIndex], $orderDir);
+        } else {
+            // Default sort: order by ID descending (same as default DataTable config "order": [[1, "desc"]])
+            $query->orderBy('id_film', 'desc');
+        }
+
+        // 3. Pagination/Limit logic
+        $page = (int)$request->get('page', 1);
+        $limit = (int)$request->get('limit', 10);
+
+        if ($limit > 0) {
+            $offset = ($page - 1) * $limit;
+            $query->skip($offset)->take($limit);
+        }
+
+        $films = $query->get();
+
         $pdf = Pdf::loadView('reports.films_pdf', compact('films'));
         $pdf->setOption('isRemoteEnabled', true);
         $pdf->setOption('isHtml5ParserEnabled', true);

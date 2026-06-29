@@ -35,6 +35,11 @@
     .animate-fade-in-modal {
         animation: fadeIn 0.4s ease forwards;
     }
+    @keyframes netflixLoad {
+        0% { left: -30%; width: 30%; }
+        50% { width: 50%; }
+        100% { left: 100%; width: 30%; }
+    }
 </style>
 @endsection
 
@@ -312,7 +317,9 @@
         <div class="flex-grow flex items-center justify-center bg-black relative overflow-hidden">
             <!-- Simulated Loading Indicator -->
             <div id="playerLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-black z-20 space-y-4">
-                <div class="w-14 h-14 border-4 border-t-netflix-red border-zinc-800 rounded-full animate-spin"></div>
+                <div class="w-48 h-1.5 bg-zinc-800 rounded-full overflow-hidden relative">
+                    <div class="h-full bg-netflix-red absolute left-0 top-0 rounded-full" style="animation: netflixLoad 1.5s infinite ease-in-out;"></div>
+                </div>
                 <span class="text-xs text-slate-400 tracking-widest font-mono">BUFFERS LOADING...</span>
             </div>
             

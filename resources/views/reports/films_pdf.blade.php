@@ -116,15 +116,20 @@
                             @php
                                 $isRemote = strpos($film->gambar, 'http') === 0;
                                 $showImage = false;
-                                if (!$isRemote) {
+                                $imageSrc = '';
+                                if ($isRemote) {
+                                    $imageSrc = $film->gambar;
+                                    $showImage = true;
+                                } else {
                                     $imagePath = storage_path('app/public/' . $film->gambar);
                                     if (file_exists($imagePath)) {
+                                        $imageSrc = $imagePath;
                                         $showImage = true;
                                     }
                                 }
                             @endphp
                             @if($showImage)
-                                <img src="{{ $imagePath }}" style="width: 40px; height: 60px; border: 1px solid #cccccc; border-radius: 2px;" alt="Poster">
+                                <img src="{{ $imageSrc }}" style="width: 40px; height: 60px; border: 1px solid #cccccc; border-radius: 2px;" alt="Poster">
                             @else
                                 <span style="color: #999999; font-size: 8px;">No Poster</span>
                             @endif
