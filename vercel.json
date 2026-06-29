@@ -33,6 +33,7 @@
     "SESSION_DRIVER": "cookie",
     "LOG_CHANNEL": "stderr",
     "DOMPDF_FONT_DIR": "/tmp",
-    "DOMPDF_FONT_CACHE": "/tmp"
+    "DOMPDF_FONT_CACHE": "/tmp",
+    "APP_KEY": "base64:4aehesDhDRcv914GBjpVbWTaz37e3y6XxDSqNCNo2qk="
   }
 }
