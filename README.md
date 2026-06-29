@@ -81,6 +81,48 @@ Kolom yang tersedia pada tabel films:
    ```
 10. Akses aplikasi melalui peramban pada alamat http://127.0.0.1:8000.
 
+## Panduan Deploy ke Vercel
+
+Aplikasi ini sudah dikonfigurasi agar kompatibel untuk di-deploy di Vercel secara serverless. Berikut langkah-langkah deployment-nya:
+
+### 1. Prasyarat & File Konfigurasi
+Kami telah menambahkan file berikut untuk kompatibilitas Vercel:
+- `vercel.json` - Mengatur serverless function `vercel-php`, routing aset statis (`/build`), routing backend, dan meredireksi cache storage Laravel ke `/tmp` yang bersifat writable di serverless environment.
+- `api/index.php` - Entry point proxy untuk meneruskan traffic ke `public/index.php`.
+- `.vercelignore` - Mencegah folder lokal `vendor` dan `node_modules` diupload ke cloud.
+- Penyesuaian `config/dompdf.php` dan `bootstrap/app.php` untuk memindahkan directory font cache Dompdf ke `/tmp` serta mengizinkan Proxy Vercel (`trustProxies`).
+
+### 2. Hubungkan Database Online
+Karena runtime Vercel bersifat ephemeral (sementara) dan stateless, Anda membutuhkan database eksternal yang di-host online (seperti Aiven MySQL, PlanetScale, Supabase, Clever Cloud, dll.).
+
+### 3. Langkah-Langkah Deployment via Dashboard Vercel
+1. Upload proyek Anda ke repositori Git (GitHub / GitLab / Bitbucket).
+2. Masuk ke dashboard [Vercel](https://vercel.com).
+3. Klik **Add New** > **Project**, lalu impor repositori proyek Anda.
+4. Pada bagian **Configure Project**:
+   - **Framework Preset**: Pilih **Other** (jangan ubah).
+   - **Build and Development Settings**: Vercel secara otomatis mendeteksi konfigurasi `vercel.json`. Pastikan **Build Command** adalah `npm run build` atau `vite build` dan **Output Directory** adalah `public` (sudah dikonfigurasi di `vercel.json`).
+5. Tambahkan **Environment Variables** berikut di Vercel Settings sebelum menekan tombol **Deploy**:
+   - `APP_KEY`: *(Gunakan nilai dari file `.env` lokal Anda)*
+   - `APP_ENV`: `production`
+   - `APP_DEBUG`: `false`
+   - `APP_URL`: *(Isi dengan URL Vercel setelah di-deploy)*
+   - `DB_CONNECTION`: `mysql`
+   - `DB_HOST`: *(Host database online Anda)*
+   - `DB_PORT`: `3306`
+   - `DB_DATABASE`: *(Nama database online Anda)*
+   - `DB_USERNAME`: *(Username database online Anda)*
+   - `DB_PASSWORD`: *(Password database online Anda)*
+6. Klik **Deploy** dan tunggu proses build selesai.
+
+### 4. Migrasi Database Online
+Setelah berhasil di-deploy, jalankan perintah migrasi dan seeder pada database online Anda sekali saja dari komputer lokal dengan mengubah sementara `.env` lokal Anda mengarah ke database online, kemudian jalankan:
+```bash
+php artisan migrate:fresh --seed
+```
+
+---
+
 ## Menjalankan Pengujian (Testing)
 Aplikasi ini dilengkapi dengan pengujian otomatis untuk memvalidasi alur autentikasi admin, pembuatan data film, serta ekspor PDF:
 ```bash
