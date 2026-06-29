@@ -197,10 +197,8 @@
     <footer class="border-t border-zinc-900 bg-netflix-black/60 py-10 text-center text-xs text-slate-500">
         <div class="max-w-4xl mx-auto px-4 space-y-6">
             <div class="flex justify-center gap-6 text-lg text-slate-400">
-                <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
-                <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-twitter"></i></a>
-                <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-youtube"></i></a>
+                <a href="https://instagram.com/tams_kaisar" target="_blank" rel="noopener noreferrer" class="hover:text-[#E1306C] transition-colors duration-300" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://github.com/codewithtama" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors duration-300" title="GitHub"><i class="fa-brands fa-github"></i></a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left max-w-2xl mx-auto text-slate-400">
                 <a href="#" class="hover:underline">Deskripsi Audio</a>
