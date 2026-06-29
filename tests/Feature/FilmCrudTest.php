@@ -140,4 +140,38 @@ class FilmCrudTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    /**
+     * Test admin cannot create a film with a duplicate title.
+     */
+    public function test_admin_cannot_create_film_with_duplicate_title(): void
+    {
+        $admin = User::create([
+            'name' => 'Admin Test',
+            'username' => 'admin',
+            'password' => bcrypt('admin123'),
+        ]);
+
+        Film::create([
+            'judul' => 'Inception',
+            'genre' => 'Sci-Fi',
+            'sutradara' => 'Christopher Nolan',
+            'tahun_rilis' => 2010,
+            'gambar' => 'films/test.jpg',
+        ]);
+
+        Storage::fake('public');
+
+        // Attempt to create a film with the duplicate title "Inception"
+        $response = $this->actingAs($admin)->post('/admin/store', [
+            'judul' => 'Inception',
+            'genre' => 'Action',
+            'sutradara' => 'Nolan',
+            'tahun_rilis' => 2010,
+            'gambar' => UploadedFile::fake()->image('poster.jpg'),
+        ]);
+
+        $response->assertSessionHasErrors('judul');
+        $this->assertEquals(1, Film::where('judul', 'Inception')->count());
+    }
 }
