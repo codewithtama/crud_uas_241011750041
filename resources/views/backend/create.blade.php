@@ -50,12 +50,22 @@
                 <!-- Genre -->
                 <div>
                     <label for="genre" class="block text-xs font-semibold text-slate-400 mb-1.5">Genre</label>
-                    <input type="text" name="genre" id="genre" value="{{ old('genre') }}" required placeholder="Contoh: Sci-Fi, Adventure"
-                        @class([
-                            'block w-full px-3.5 py-2.5 bg-[#141414] border rounded text-slate-100 placeholder-zinc-600 focus:outline-none focus:ring-2 transition-all text-sm',
-                            'border-netflix-red focus:ring-netflix-red/30' => $errors->has('genre'),
-                            'border-zinc-800 focus:ring-netflix-red/30' => !$errors->has('genre'),
-                        ])>
+                    <div class="relative">
+                        <select name="genre" id="genre" required
+                            @class([
+                                'block w-full px-3.5 py-2.5 bg-[#141414] border rounded text-slate-100 placeholder-zinc-600 focus:outline-none focus:ring-2 transition-all text-sm appearance-none cursor-pointer pr-10',
+                                'border-netflix-red focus:ring-netflix-red/30' => $errors->has('genre'),
+                                'border-zinc-800 focus:ring-netflix-red/30' => !$errors->has('genre'),
+                            ])>
+                            <option value="" disabled {{ empty(old('genre')) ? 'selected' : '' }} class="bg-zinc-900 text-slate-400">Pilih Genre</option>
+                            @foreach(['Action', 'Sci-Fi', 'Drama', 'Comedy', 'Horror', 'Romance', 'Thriller', 'Anime', 'Adventure', 'Fantasy'] as $g)
+                                <option value="{{ $g }}" {{ old('genre') === $g ? 'selected' : '' }} class="bg-zinc-900 text-slate-100">{{ $g }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
                     @error('genre')
                         <p class="mt-1.5 text-xs text-netflix-red flex items-center gap-1">
                             <i class="fa-solid fa-circle-exclamation text-[10px]"></i>
