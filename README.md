@@ -81,45 +81,24 @@ Kolom yang tersedia pada tabel films:
    ```
 10. Akses aplikasi melalui peramban pada alamat http://127.0.0.1:8000.
 
-## Panduan Deploy ke Vercel
+## Panduan Deploy ke Railway
 
-Aplikasi ini sudah dikonfigurasi agar kompatibel untuk di-deploy di Vercel secara serverless. Berikut langkah-langkah deployment-nya:
+Aplikasi ini mendukung deployment otomatis ke platform **Railway** dengan deteksi container berbasis **Nixpacks** secara native.
 
-### 1. Prasyarat & File Konfigurasi
-Kami telah menambahkan file berikut untuk kompatibilitas Vercel:
-- `vercel.json` - Mengatur serverless function `vercel-php`, routing aset statis (`/build`), routing backend, dan meredireksi cache storage Laravel ke `/tmp` yang bersifat writable di serverless environment.
-- `api/index.php` - Entry point proxy untuk meneruskan traffic ke `public/index.php`.
-- `.vercelignore` - Mencegah folder lokal `vendor` dan `node_modules` diupload ke cloud.
-- Penyesuaian `config/dompdf.php` dan `bootstrap/app.php` untuk memindahkan directory font cache Dompdf ke `/tmp` serta mengizinkan Proxy Vercel (`trustProxies`).
+Langkah-langkah deployment secara singkat:
+1. Hubungkan repositori GitHub Anda ke **Railway**.
+2. Tambahkan layanan **MySQL Database** di proyek Railway Anda (atau gunakan database eksternal).
+3. Atur **Environment Variables** pada layanan aplikasi Anda di Railway (terutama `APP_KEY`, `APP_ENV=production`, `APP_DEBUG=false`, dan pemetaan kredensial database `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
+4. Atur **Pre-deploy Command** pada tab Settings layanan aplikasi Anda di Railway dengan:
+   ```bash
+   php artisan migrate --force
+   ```
+5. Akses domain publik yang di-generate oleh Railway dan jalankan database seeder awal melalui tab **Shell** di dashboard:
+   ```bash
+   php artisan db:seed --force
+   ```
 
-### 2. Hubungkan Database Online
-Karena runtime Vercel bersifat ephemeral (sementara) dan stateless, Anda membutuhkan database eksternal yang di-host online (seperti Aiven MySQL, PlanetScale, Supabase, Clever Cloud, dll.).
-
-### 3. Langkah-Langkah Deployment via Dashboard Vercel
-1. Upload proyek Anda ke repositori Git (GitHub / GitLab / Bitbucket).
-2. Masuk ke dashboard [Vercel](https://vercel.com).
-3. Klik **Add New** > **Project**, lalu impor repositori proyek Anda.
-4. Pada bagian **Configure Project**:
-   - **Framework Preset**: Pilih **Other** (jangan ubah).
-   - **Build and Development Settings**: Vercel secara otomatis mendeteksi konfigurasi `vercel.json`. Pastikan **Build Command** adalah `npm run build` atau `vite build` dan **Output Directory** adalah `public` (sudah dikonfigurasi di `vercel.json`).
-5. Tambahkan **Environment Variables** berikut di Vercel Settings sebelum menekan tombol **Deploy**:
-   - `APP_KEY`: *(Gunakan nilai dari file `.env` lokal Anda)*
-   - `APP_ENV`: `production`
-   - `APP_DEBUG`: `false`
-   - `APP_URL`: *(Isi dengan URL Vercel setelah di-deploy)*
-   - `DB_CONNECTION`: `mysql`
-   - `DB_HOST`: *(Host database online Anda)*
-   - `DB_PORT`: `3306`
-   - `DB_DATABASE`: *(Nama database online Anda)*
-   - `DB_USERNAME`: *(Username database online Anda)*
-   - `DB_PASSWORD`: *(Password database online Anda)*
-6. Klik **Deploy** dan tunggu proses build selesai.
-
-### 4. Migrasi Database Online
-Setelah berhasil di-deploy, jalankan perintah migrasi dan seeder pada database online Anda sekali saja dari komputer lokal dengan mengubah sementara `.env` lokal Anda mengarah ke database online, kemudian jalankan:
-```bash
-php artisan migrate:fresh --seed
-```
+Untuk panduan, diagram arsitektur, dan detail konfigurasi selengkapnya, silakan baca berkas [DOKUMENTASI_DEPLOY.md](DOKUMENTASI_DEPLOY.md).
 
 ---
 

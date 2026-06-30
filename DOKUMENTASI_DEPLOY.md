@@ -1,125 +1,134 @@
-# Panduan & Dokumentasi Deployment: Vercel + Aiven MySQL
-Dokumen ini menjelaskan arsitektur, cara kerja, dan konfigurasi lengkap proses deployment aplikasi **CineManage** ke **Vercel** (Serverless Web Hosting) dan **Aiven** (Cloud Database).
+# Panduan & Dokumentasi Deployment: Railway + MySQL
+
+Dokumen ini menjelaskan arsitektur, cara kerja, dan konfigurasi lengkap proses deployment aplikasi **CineManage** ke **Railway** (Platform-as-a-Service berbasis Container) dengan menggunakan **MySQL** (baik layanan internal Railway maupun external cloud database seperti Aiven).
 
 ---
 
-## 1. Arsitektur Produksi: Mengapa Vercel & Aiven?
+## 1. Arsitektur Produksi: Mengapa Railway?
 
-Saat dijalankan secara lokal di komputer (development), aplikasi menggunakan:
-* **Web Server**: Apache/Nginx bawaan PHP (`php artisan serve`).
-* **Database**: MySQL lokal (`localhost` / `127.0.0.1`) lewat XAMPP/Laragon.
-
-Namun, di lingkungan produksi (production cloud), kita menggunakan kombinasi **Vercel** dan **Aiven**:
+Saat dijalankan di lingkungan produksi cloud, kita menggunakan platform **Railway** yang mendukung pembuatan container secara otomatis via **Nixpacks**:
 
 ```mermaid
-graph LR
-    User([Pengguna / Client]) --> Vercel[Vercel Serverless Function <br> PHP Runtime]
-    Vercel -->|Aset Statis| Vite[Vite Build / Public Assets]
-    Vercel -->|Query Database via SSL| Aiven[Aiven Cloud Database <br> Managed MySQL]
+graph TD
+    User([Pengguna / Client]) -->|HTTPS| RailwayApp[Railway App Container <br> Nginx + PHP-FPM]
+    RailwayApp -->|Aset Statis| Vite[Vite Assets / Compile]
+    RailwayApp -->|Koneksi Database| DB[(MySQL Database)]
 ```
 
-### Karakteristik Vercel (Stateless & Ephemeral)
-Vercel adalah platform *Serverless* yang bersifat *stateless* (tidak menyimpan status) dan *ephemeral* (sementara). 
-* **Keuntungan**: Sangat cepat, gratis, otomatis melakukan build frontend (Vite), dan memiliki performa tinggi.
-* **Tantangan**: Sistem file Vercel bersifat *read-only* (hanya bisa dibaca). Anda tidak bisa menginstal database MySQL lokal di dalam server Vercel, dan file yang diunggah secara lokal ke server akan hilang saat serverless function melakukan *cold-start* (di-restart otomatis oleh Vercel).
-
-### Peran Aiven (Persistent Storage)
-Karena Vercel tidak bisa menyimpan data secara permanen, kita memerlukan **Aiven** sebagai penyedia layanan database MySQL berbasis Cloud (Managed Service).
-* Database berada di server cloud Aiven (misalnya berlokasi di AWS Singapura) yang selalu aktif dan terus menyimpan data Anda secara aman.
-* Vercel akan mengirimkan kueri database (insert, select, update, delete) secara remote ke Aiven melalui jaringan internet yang aman.
+### Karakteristik Deployment di Railway
+* **Nixpacks Engine**: Railway mendeteksi file `composer.json` dan `package.json`/`vite.config.js` di dalam repositori secara otomatis untuk membangun (build) container PHP 8.3 & Node.js, mengompilasi aset front-end, dan menjalankan Nginx bersama PHP-FPM dengan konfigurasi document root mengarah ke `/app/public`.
+* **Zero Downtime dengan Pre-deploy**: Railway memungkinkan kita menjalankan perintah migrasi database sebelum container baru melayani lalu lintas pengguna (traffic). Jika migrasi gagal, deployment baru tidak akan dipublikasikan, menjaga aplikasi produksi tetap aman dari error.
+* **Trust Proxies**: Aplikasi dikonfigurasi di `bootstrap/app.php` dengan `$middleware->trustProxies(at: '*')` sehingga Railway Load Balancer dapat meneruskan request HTTPS dengan benar, menghindari masalah aset CSS/JS tidak termuat (Mixed Content).
 
 ---
 
-## 2. Detail Konfigurasi Vercel
+## 2. Pilihan Database di Lingkungan Produksi
 
-Beberapa konfigurasi khusus telah diterapkan agar Laravel dapat berjalan dengan lancar di lingkungan serverless Vercel:
+Anda memiliki dua opsi utama untuk database MySQL di Railway:
 
-### A. File `vercel.json`
-File ini mengontrol bagaimana Vercel memproses aplikasi Laravel Anda:
-* **`functions`**: Menentukan bahwa file `api/index.php` akan dieksekusi menggunakan runtime PHP (`vercel-php@0.7.4`).
-* **`routes`**: 
-  * Mengarahkan aset statis CSS & JS hasil kompilasi Vite (`/build/(.*)`) langsung ke direktori `/public/build/` agar dimuat dengan cepat.
-  * Meredireksi semua request URL lainnya (`/(.*)`) ke `api/index.php` yang bertindak sebagai jembatan/proxy ke Laravel.
-* **`env`**: Menyimpan konfigurasi cache Laravel ke folder `/tmp` (satu-satunya direktori di Vercel yang memiliki izin menulis/writeable).
+### Opsi A: Menggunakan Database MySQL Bawaan Railway (Sangat Direkomendasikan)
+Anda dapat membuat database MySQL langsung di dalam proyek Railway yang sama agar terhubung secara lokal/internal dengan performa tinggi.
 
-### B. File `api/index.php`
-Berperan sebagai *entry point* (gerbang masuk) untuk Vercel. File ini hanya memuat kode:
-```php
-<?php
-require __DIR__ . '/../public/index.php';
+Setelah menambahkan layanan MySQL di Railway, Railway akan men-generate environment variables berikut:
+* `MYSQLHOST` (Host database)
+* `MYSQLPORT` (Port database, biasanya 3306)
+* `MYSQLDATABASE` (Nama database)
+* `MYSQLUSER` (Username database)
+* `MYSQLPASSWORD` (Password database)
+
+Karena Laravel mencari variabel dengan format `DB_HOST`, `DB_PORT`, dll., Anda perlu memetakan (map) variabel tersebut pada pengaturan Environment Variables layanan aplikasi Anda di Railway menggunakan sintaks referensi Railway:
+```env
+DB_CONNECTION=mysql
+DB_HOST=${{MYSQLHOST}}
+DB_PORT=${{MYSQLPORT}}
+DB_DATABASE=${{MYSQLDATABASE}}
+DB_USERNAME=${{MYSQLUSER}}
+DB_PASSWORD=${{MYSQLPASSWORD}}
 ```
-Ini berguna untuk menjembatani struktur folder serverless Vercel dengan struktur folder standard Laravel public index.
 
-### C. Proxy & SSL (`bootstrap/app.php`)
-Di dalam `bootstrap/app.php`, terdapat baris:
-```php
-$middleware->trustProxies(at: '*');
-```
-Vercel menggunakan reverse proxy untuk menyajikan aplikasi Anda. Tanpa konfigurasi *Trust Proxies* ini, Laravel tidak tahu bahwa aplikasi berjalan di atas HTTPS, sehingga semua aset (CSS, JS, Gambar) akan dimuat secara tidak aman menggunakan protokol HTTP (`http://`) dan menyebabkan error *Mixed Content*.
-
----
-
-## 3. Detail Konfigurasi Aiven MySQL
-
-Aiven menerapkan standar keamanan tinggi dengan mewajibkan koneksi terenkripsi (SSL/TLS). 
-
-### Parameter Koneksi dari Aiven:
-1. **Host**: Alamat URL unik server database Anda (contoh: `crud-db-...aivencloud.com`).
-2. **Port**: Port kustom dari Aiven (biasanya berupa angka acak seperti `15625`, bukan port MySQL standar `3306`).
-3. **Database Name**: `defaultdb` (database bawaan yang dibuat oleh Aiven).
-4. **User**: `avnadmin` (administrator utama).
-5. **Password**: Kunci keamanan unik yang di-generate oleh Aiven.
-6. **SSL Mode**: `REQUIRED` (Artinya database menolak semua koneksi yang tidak terenkripsi).
-
-Agar Laravel dapat terhubung ke database yang mewajibkan SSL ini, kita menambahkan parameter berikut pada Environment Variable di Vercel:
+### Opsi B: Tetap Menggunakan Aiven MySQL (Eksternal via SSL)
+Jika Anda ingin tetap menggunakan database **Aiven MySQL** yang sudah dibuat sebelumnya, gunakan kredensial dari Aiven dan pastikan menambahkan variabel berikut di Railway agar koneksi database terenkripsi secara aman (SSL/TLS):
 ```env
 MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt
 ```
-Variabel ini memberi tahu driver PDO MySQL di server Vercel untuk memverifikasi sertifikat SSL menggunakan daftar sertifikat root tepercaya milik sistem Linux Vercel.
+Variabel ini menginstruksikan driver PDO MySQL di Railway untuk memverifikasi sertifikat SSL Aiven menggunakan sertifikat root terpercaya sistem Linux bawaan.
 
 ---
 
-## 4. Langkah-Langkah Sinkronisasi & Migrasi (Lokal ke Cloud)
+## 3. Langkah-Langkah Deployment via Dashboard Railway
 
-Agar database cloud Aiven memiliki struktur tabel (films, users) yang sama dengan database lokal Anda, lakukan langkah-langkah berikut:
+Ikuti langkah-langkah berikut untuk men-deploy aplikasi Anda:
 
-### Langkah A: Konfigurasi `.env` Lokal Sementara
-Ubah isi file `.env` di komputer lokal Anda menggunakan kredensial database cloud Aiven:
-```env
-DB_CONNECTION=mysql
-DB_HOST=crud-db-241011750041-crud-uas-241011750041.l.aivencloud.com
-DB_PORT=15625
-DB_DATABASE=defaultdb
-DB_USERNAME=avnadmin
-DB_PASSWORD=GANTI_DENGAN_PASSWORD_DARI_AIVEN
-```
+### Langkah 1: Hubungkan Repositori Git
+1. Buka [Railway Dashboard](https://railway.app) dan login dengan akun Anda.
+2. Klik **New Project** > **Deploy from GitHub repo**.
+3. Pilih repositori proyek **crud_uas_241011750041**.
 
-### Langkah B: Jalankan Perintah Migrasi & Seeding
-Buka terminal di VS Code, lalu jalankan perintah:
+### Langkah 2: Tambahkan Database MySQL (Jika menggunakan Opsi A)
+1. Di dalam kanvas proyek Railway Anda, klik **+ New** > **Database** > **Add MySQL**.
+2. Tunggu hingga layanan MySQL selesai dibuat.
+
+### Langkah 3: Konfigurasi Environment Variables Aplikasi
+Klik pada layanan aplikasi Laravel Anda di Railway, lalu masuk ke tab **Variables** dan tambahkan variabel berikut:
+* `APP_NAME` = `CineManage`
+* `APP_ENV` = `production`
+* `APP_KEY` = *(Gunakan nilai dari file `.env` lokal Anda, contoh: `base64:4aehes...`)*
+* `APP_DEBUG` = `false`
+* `APP_URL` = `${{RAILWAY_PUBLIC_DOMAIN}}` *(Referensi otomatis ke domain publik Railway)*
+* `DB_CONNECTION` = `mysql`
+
+**Jika menggunakan Database Railway (Opsi A):**
+* `DB_HOST` = `${{MYSQLHOST}}`
+* `DB_PORT` = `${{MYSQLPORT}}`
+* `DB_DATABASE` = `${{MYSQLDATABASE}}`
+* `DB_USERNAME` = `${{MYSQLUSER}}`
+* `DB_PASSWORD` = `${{MYSQLPASSWORD}}`
+
+**Jika menggunakan Database Aiven MySQL (Opsi B):**
+* `DB_HOST` = *(Host Aiven)*
+* `DB_PORT` = *(Port Aiven)*
+* `DB_DATABASE` = `defaultdb`
+* `DB_USERNAME` = `avnadmin`
+* `DB_PASSWORD` = *(Password Aiven)*
+* `MYSQL_ATTR_SSL_CA` = `/etc/ssl/certs/ca-certificates.crt`
+
+### Langkah 4: Atur Pre-deploy Command & Domain
+1. Pada layanan aplikasi Anda di Railway, masuk ke tab **Settings**.
+2. Cari bagian **Deploy** -> **Pre-deploy Command**, lalu isi dengan:
+   ```bash
+   php artisan migrate --force
+   ```
+   *Perintah ini akan secara otomatis dijalankan setiap kali ada update kode sebelum versi baru aktif.*
+3. Cari bagian **Networking** -> **Generate Domain** untuk mendapatkan URL publik aplikasi Anda.
+
+---
+
+## 4. Menjalankan Database Seeding Awal (Satu Kali)
+
+Karena database produksi Anda masih kosong setelah migrasi pertama kali dijalankan, Anda perlu memasukkan data film awal dan akun administrator.
+
+Ada dua cara untuk menjalankan seeder di Railway:
+
+### Metode 1: Menggunakan Shell di Dashboard Railway (Mudah)
+1. Klik layanan aplikasi Anda di Railway.
+2. Masuk ke tab **Shell** / **Terminal**.
+3. Jalankan perintah berikut:
+   ```bash
+   php artisan db:seed --force
+   ```
+
+### Metode 2: Menggunakan Railway CLI
+Jika Anda menginstal Railway CLI di komputer lokal, jalankan perintah berikut dari terminal proyek Anda:
 ```powershell
-php artisan migrate --seed
-```
-*Perintah ini akan terhubung ke cloud Aiven, membuat tabel-tabel database, dan memasukkan data film awal beserta user admin.*
-
-### Langkah C: Kembalikan `.env` Lokal ke Semula
-Setelah proses migrasi sukses, kembalikan konfigurasi database di file `.env` lokal Anda ke database lokal (`127.0.0.1`) agar Anda dapat melakukan pengujian lokal kembali tanpa mempengaruhi data cloud:
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=db_uas_241011750041
-DB_USERNAME=root
-DB_PASSWORD=
+railway run php artisan db:seed --force
 ```
 
 ---
 
-## 5. Keterbatasan & Solusi File Upload di Vercel
+## 5. Karakteristik File Upload di Railway
 
-Karena Vercel bersifat *stateless*, setiap kali Anda mengunggah gambar poster film baru melalui web yang di-deploy di Vercel:
-1. Gambar akan tersimpan sementara di disk Vercel.
-2. Ketika serverless function mengalami *restart* otomatis (biasanya setelah beberapa menit tidak ada aktivitas, atau saat deploy ulang), file gambar tersebut akan **hilang**.
+Sama seperti Vercel, container aplikasi di Railway bersifat **ephemeral** (sementara). File poster film baru yang diunggah ke folder `storage/app/public` secara lokal di dalam container akan hilang setiap kali aplikasi di-deploy ulang atau dimulai ulang (cold start).
 
-### Solusi untuk Demo Projek UAS:
-* **Gunakan Link Gambar Eksternal**: Saat menambahkan data film baru di halaman admin, daripada mengunggah file gambar dari komputer, Anda dapat memodifikasi seeder database agar menggunakan URL gambar langsung dari internet (misalnya dari CDN atau situs web film seperti IMDb/Unsplash) yang tidak akan terpengaruh oleh restart server.
-* **Layanan Cloud Storage (Opsional)**: Untuk aplikasi tingkat produksi sesungguhnya, file upload biasanya dihubungkan ke penyedia pihak ketiga seperti AWS S3, Google Cloud Storage, Cloudinary, atau Imgur API, sehingga file tersimpan secara permanen di cloud khusus file.
+### Solusi untuk Projek UAS:
+* **Gunakan URL Gambar Eksternal**: Saat menambahkan data film melalui panel Admin, disarankan untuk mengisi input poster film menggunakan link/URL gambar langsung dari internet (seperti dari IMDb, Unsplash, atau CDN eksternal) agar gambar tetap tampil secara permanen.
+* **Storage Eksternal (Produksi Komersial)**: Untuk aplikasi tingkat lanjut, hubungkan Laravel filesystem ke cloud storage seperti **Cloudinary**, **AWS S3**, atau **SupaBase Storage** agar file tersimpan secara permanen di server khusus media.
