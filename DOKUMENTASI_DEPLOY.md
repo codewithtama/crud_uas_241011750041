@@ -17,6 +17,7 @@ graph TD
 
 ### Karakteristik Deployment di Railway
 * **Nixpacks Engine**: Railway mendeteksi file `composer.json` dan `package.json`/`vite.config.js` di dalam repositori secara otomatis untuk membangun (build) container PHP 8.3 & Node.js, mengompilasi aset front-end, dan menjalankan Nginx bersama PHP-FPM dengan konfigurasi document root mengarah ke `/app/public`.
+* **Versi Node.js**: Karena Vite membutuhkan Node.js versi 20.19+ atau 22.12+, proyek ini telah dikonfigurasi dengan `"engines": {"node": "22"}` di `package.json` dan file `.nvmrc` untuk memaksa Nixpacks menggunakan runtime Node.js 22 selama kompilasi aset frontend.
 * **Zero Downtime dengan Pre-deploy**: Railway memungkinkan kita menjalankan perintah migrasi database sebelum container baru melayani lalu lintas pengguna (traffic). Jika migrasi gagal, deployment baru tidak akan dipublikasikan, menjaga aplikasi produksi tetap aman dari error.
 * **Trust Proxies**: Aplikasi dikonfigurasi di `bootstrap/app.php` dengan `$middleware->trustProxies(at: '*')` sehingga Railway Load Balancer dapat meneruskan request HTTPS dengan benar, menghindari masalah aset CSS/JS tidak termuat (Mixed Content).
 
